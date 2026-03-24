@@ -34,5 +34,5 @@ steps:
       az aks get-credentials --name ecommerce-aks --resource-group ecommerseapp --overwrite-existing
 
 - script: |
-    helm upgrade --install ecommerce ./helm/ecommerce --set image.tag=$(Build.BuildId)
+    kubectl apply -f ks8/
   displayName: Deploy to AKS
