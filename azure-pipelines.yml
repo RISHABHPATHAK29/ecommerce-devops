@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: Default   # self-hosted agent
+  name: Default
 
 variables:
   ACR_NAME: rishabhacr07
@@ -10,10 +10,8 @@ variables:
 
 steps:
 
-# 1. Checkout Code
 - checkout: self
 
-# 2. Login to Azure + ACR
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
@@ -22,29 +20,19 @@ steps:
     inlineScript: |
       az acr login --name $(ACR_NAME)
 
-# 3. Build & Push Docker Image (PowerShell format)
 - script: |
     docker buildx create --use
-    docker buildx build `
-      --platform linux/arm64 `
-      -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) `
-      --push ./frontend
+    docker buildx build --platform linux/arm64 -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) --push ./frontend
   displayName: Build & Push Image
 
-# 4. Connect to AKS
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
     scriptType: ps
     scriptLocation: inlineScript
     inlineScript: |
-      az aks get-credentials `
-        --name ecommerce-aks `
-        --resource-group ecommerseapp `
-        --overwrite-existing
+      az aks get-credentials --name ecommerce-aks --resource-group ecommerseapp --overwrite-existing
 
-# 5. Deploy using Helm
 - script: |
-    helm upgrade --install ecommerce ./helm/ecommerce `
-      --set image.tag=$(Build.BuildId)
+    helm upgrade --install ecommerce ./helm/ecommerce --set image.tag=$(Build.BuildId)
   displayName: Deploy to AKS
