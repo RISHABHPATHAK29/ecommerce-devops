@@ -1,7 +1,5 @@
 trigger:
 - main
-trigger:
-- main
 
 pool:
   name: Default
@@ -14,7 +12,6 @@ steps:
 
 - checkout: self
 
-# Login to ACR
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
@@ -23,7 +20,6 @@ steps:
     inlineScript: |
       az acr login --name $(ACR_NAME)
 
-# Build & Push Image
 - script: |
     docker buildx create --use || true
     docker buildx build \
@@ -31,9 +27,8 @@ steps:
       -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) \
       -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest \
       --push ./frontend
-  displayName: Build & Push Image
+  displayName: Build and Push Image
 
-# Connect to AKS
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
@@ -45,7 +40,6 @@ steps:
         --resource-group ecommerseapp \
         --overwrite-existing
 
-# Deploy
 - script: |
     kubectl apply -f ks8/
   displayName: Deploy to AKS
