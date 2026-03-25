@@ -1,8 +1,10 @@
 trigger:
 - main
+trigger:
+- main
 
 pool:
-  name: Default   # your self-hosted Linux agent
+  name: Default
 
 variables:
   ACR_NAME: rishabhacr07
@@ -12,7 +14,7 @@ steps:
 
 - checkout: self
 
-# 🔹 Login to ACR
+# Login to ACR
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
@@ -21,7 +23,7 @@ steps:
     inlineScript: |
       az acr login --name $(ACR_NAME)
 
-# 🔹 Build & Push Docker Image
+# Build & Push Image
 - script: |
     docker buildx create --use || true
     docker buildx build \
@@ -31,7 +33,7 @@ steps:
       --push ./frontend
   displayName: Build & Push Image
 
-# 🔹 Connect to AKS
+# Connect to AKS
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
@@ -43,7 +45,7 @@ steps:
         --resource-group ecommerseapp \
         --overwrite-existing
 
-# 🔹 Deploy to AKS
+# Deploy
 - script: |
     kubectl apply -f ks8/
   displayName: Deploy to AKS
