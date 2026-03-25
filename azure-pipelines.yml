@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: Default
+  name: Default   # your self-hosted Linux agent
 
 variables:
   ACR_NAME: rishabhacr07
@@ -12,27 +12,38 @@ steps:
 
 - checkout: self
 
+# 🔹 Login to ACR
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
-    scriptType: ps
+    scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
       az acr login --name $(ACR_NAME)
 
+# 🔹 Build & Push Docker Image
 - script: |
-    docker buildx create --use
-    docker buildx build --platform linux/arm64 -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) --push ./frontend
+    docker buildx create --use || true
+    docker buildx build \
+      --platform linux/amd64 \
+      -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) \
+      -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest \
+      --push ./frontend
   displayName: Build & Push Image
 
+# 🔹 Connect to AKS
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
-    scriptType: ps
+    scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
-      az aks get-credentials --name ecommerce-aks --resource-group ecommerseapp --overwrite-existing
+      az aks get-credentials \
+        --name ecommerce-aks \
+        --resource-group ecommerseapp \
+        --overwrite-existing
 
+# 🔹 Deploy to AKS
 - script: |
     kubectl apply -f ks8/
   displayName: Deploy to AKS
