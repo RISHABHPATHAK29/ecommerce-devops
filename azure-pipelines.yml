@@ -21,12 +21,10 @@ steps:
       az acr login --name $(ACR_NAME)
 
 - script: |
-    docker buildx create --use || true
-    docker buildx build \
-      --platform linux/amd64 \
-      -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) \
-      -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest \
-      --push ./frontend
+    docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) ./frontend
+    docker tag $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest
+    docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId)
+    docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest
   displayName: Build and Push Image
 
 - task: AzureCLI@2
