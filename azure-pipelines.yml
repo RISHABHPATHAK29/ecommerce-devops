@@ -2,28 +2,36 @@ trigger:
 - main
 
 pool:
-  name: Default
+  name: Default   # 🔥 self-hosted agent (VERY IMPORTANT)
 
 variables:
   ACR_NAME: rishabhacr07
-  IMAGE_NAME: frontend
+  IMAGE_NAME_FRONTEND: frontend
+  IMAGE_NAME_BACKEND: backend
 
 steps:
 
+# 🔹 Checkout code
 - checkout: self
 
 # 🔹 Login to ACR
 - script: |
-    docker login $(ACR_NAME).azurecr.io -u $(ACR_NAME) -p $(ACR_PASSWORD)
+    echo $(ACR_PASSWORD) | docker login $(ACR_NAME).azurecr.io -u $(ACR_NAME) --password-stdin
   displayName: Login to ACR
 
-# 🔹 Build & Push
+# 🔹 Build & Push Frontend
 - script: |
-    docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest ./frontend
-    docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest
-  displayName: Build and Push Image
+    docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):latest ./frontend
+    docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):latest
+  displayName: Build & Push Frontend
 
-# 🔹 Deploy
+# 🔹 Build & Push Backend
+- script: |
+    docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):latest ./backend
+    docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):latest
+  displayName: Build & Push Backend
+
+# 🔹 Deploy to AKS (using VM kubeconfig)
 - script: |
     kubectl get nodes
     kubectl apply -f ks8/
