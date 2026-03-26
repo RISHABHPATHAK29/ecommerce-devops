@@ -3,16 +3,37 @@ kind: Ingress
 metadata:
   name: ecommerce-ingress
   annotations:
-    appgw.ingress.kubernetes.io/backend-port: "30007"   # keep this
+    kubernetes.io/ingress.class: azure/application-gateway
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
 spec:
-  ingressClassName: azure-application-gateway   # only this (NO annotation)
+  ingressClassName: azure-application-gateway
+
+  tls:
+  - hosts:
+    - rishabhpathak.me
+    - www.rishabhpathak.me
+    secretName: ecommerce-tls
+
   rules:
-    - http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: ecommerce-frontend
-                port:
-                  number: 80
+  - host: rishabhpathak.me
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ecommerce-frontend
+            port:
+              number: 80
+
+  - host: www.rishabhpathak.me
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ecommerce-frontend
+            port:
+              number: 80
