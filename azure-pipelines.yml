@@ -1,8 +1,9 @@
 trigger:
 - main
 
+# ✅ USE YOUR VM AGENT
 pool:
-  vmImage: ubuntu-latest
+  name: Default
 
 variables:
   ACR_NAME: rishabhacr07
@@ -29,7 +30,7 @@ steps:
     docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest
   displayName: Build and Push Image
 
-# 🔹 Connect to AKS (FIXED)
+# 🔹 Connect to AKS
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
