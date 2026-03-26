@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: Default
+  vmImage: ubuntu-latest
 
 variables:
   ACR_NAME: rishabhacr07
@@ -12,6 +12,7 @@ steps:
 
 - checkout: self
 
+# 🔹 Login to ACR
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
@@ -20,6 +21,7 @@ steps:
     inlineScript: |
       az acr login --name $(ACR_NAME)
 
+# 🔹 Build & Push Docker Image
 - script: |
     docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) ./frontend
     docker tag $(ACR_NAME).azurecr.io/$(IMAGE_NAME):$(Build.BuildId) $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest
@@ -27,6 +29,7 @@ steps:
     docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest
   displayName: Build and Push Image
 
+# 🔹 Connect to AKS (FIXED)
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
@@ -34,10 +37,11 @@ steps:
     scriptLocation: inlineScript
     inlineScript: |
       az aks get-credentials \
-        --name ecommerce-aks \
-        --resource-group ecommerseapp \
+        --name ecommerce-aks-private \
+        --resource-group ecommerceapp \
         --overwrite-existing
 
+# 🔹 Deploy
 - script: |
     kubectl apply -f ks8/
   displayName: Deploy to AKS
