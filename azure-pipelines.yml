@@ -1,9 +1,8 @@
 trigger:
 - main
 
-# ✅ USE YOUR VM AGENT
 pool:
-  name: Default
+  name: Default   # ✅ using your self-hosted agent
 
 variables:
   ACR_NAME: rishabhacr07
@@ -11,6 +10,7 @@ variables:
 
 steps:
 
+# 🔹 Checkout code
 - checkout: self
 
 # 🔹 Login to ACR
@@ -30,7 +30,7 @@ steps:
     docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest
   displayName: Build and Push Image
 
-# 🔹 Connect to AKS
+# 🔹 Connect to AKS (FIXED with --admin)
 - task: AzureCLI@2
   inputs:
     azureSubscription: 'azure-connection'
@@ -40,9 +40,10 @@ steps:
       az aks get-credentials \
         --name ecommerce-aks-private \
         --resource-group ecommerceapp \
+        --admin \
         --overwrite-existing
 
-# 🔹 Deploy
+# 🔹 Deploy to AKS
 - script: |
     kubectl apply -f ks8/
   displayName: Deploy to AKS
