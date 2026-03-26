@@ -2,37 +2,71 @@ trigger:
 - main
 
 pool:
-  name: Default   # 🔥 self-hosted agent (VERY IMPORTANT)
+  name: Default   # your self-hosted agent
 
 variables:
   ACR_NAME: rishabhacr07
   IMAGE_NAME_FRONTEND: frontend
   IMAGE_NAME_BACKEND: backend
+  TAG: $(Build.BuildId)
 
-steps:
+stages:
 
-# 🔹 Checkout code
-- checkout: self
+# 🔹 STAGE 1: BUILD & PUSH
+- stage: BuildAndPush
+  displayName: Build and Push Images
 
-# 🔹 Login to ACR
-- script: |
-    echo $(ACR_PASSWORD) | docker login $(ACR_NAME).azurecr.io -u $(ACR_NAME) --password-stdin
-  displayName: Login to ACR
+  jobs:
+  - job: DockerJob
+    steps:
 
-# 🔹 Build & Push Frontend
-- script: |
-    docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):latest ./frontend
-    docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):latest
-  displayName: Build & Push Frontend
+    # Checkout
+    - checkout: self
 
-# 🔹 Build & Push Backend
-- script: |
-    docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):latest ./backend
-    docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):latest
-  displayName: Build & Push Backend
+    # Login to ACR
+    - script: |
+        echo $(ACR_PASSWORD) | docker login $(ACR_NAME).azurecr.io -u $(ACR_NAME) --password-stdin
+      displayName: Login to ACR
 
-# 🔹 Deploy to AKS (using VM kubeconfig)
-- script: |
-    kubectl get nodes
-    kubectl apply -f ks8/
+    # Build & Push Frontend
+    - script: |
+        docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG) ./frontend
+        docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
+      displayName: Build & Push Frontend
+
+    # Build & Push Backend
+    - script: |
+        docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG) ./backend
+        docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
+      displayName: Build & Push Backend
+
+
+# 🔹 STAGE 2: DEPLOY
+- stage: Deploy
   displayName: Deploy to AKS
+  dependsOn: BuildAndPush
+
+  jobs:
+  - job: DeployJob
+    steps:
+
+    - checkout: self
+
+    # Verify cluster
+    - script: |
+        kubectl get nodes
+      displayName: Check AKS Connection
+
+    # Update images dynamically (VERY IMPORTANT)
+    - script: |
+        kubectl set image deployment/ecommerce-frontend \
+        frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
+
+        kubectl set image deployment/ecommerce-backend \
+        backend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
+      displayName: Update Images
+
+    # Apply manifests (only if needed)
+    - script: |
+        kubectl apply -f ks8/
+      displayName: Apply Kubernetes YAML
