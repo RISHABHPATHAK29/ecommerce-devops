@@ -11,7 +11,7 @@ function addToCart(products) {
     buttons.forEach((button) => {
 
         button.addEventListener("click", async function (e) {
-            const id = e.target.dataset.id
+    const id = e.currentTarget.dataset.id
             const findProduct = products.find((product) => product.id === Number(id))
 
             try {
