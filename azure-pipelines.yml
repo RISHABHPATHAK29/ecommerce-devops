@@ -2,21 +2,24 @@ trigger:
 - main
 
 pool:
-  name: Default   # ✅ using your self-hosted agent
+  name: Default   # ✅ your self-hosted agent
 
 variables:
   ACR_NAME: rishabhacr07
   IMAGE_NAME: frontend
+  RESOURCE_GROUP: ecommerceapp
+  AKS_NAME: ecommerce-aks-private
 
 steps:
 
 # 🔹 Checkout code
 - checkout: self
 
-# 🔹 Login to ACR
+# 🔹 Login to Azure + ACR
 - task: AzureCLI@2
+  displayName: Login to ACR
   inputs:
-    azureSubscription: 'azure-connection'
+    azureSubscription: 'azure-connection-new'   # ✅ NEW connection
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
@@ -30,16 +33,17 @@ steps:
     docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME):latest
   displayName: Build and Push Image
 
-# 🔹 Connect to AKS (FIXED with --admin)
+# 🔹 Get AKS credentials (ADMIN MODE - FIXED)
 - task: AzureCLI@2
+  displayName: Connect to AKS
   inputs:
-    azureSubscription: 'azure-connection'
+    azureSubscription: 'azure-connection-new'
     scriptType: bash
     scriptLocation: inlineScript
     inlineScript: |
       az aks get-credentials \
-        --name ecommerce-aks-private \
-        --resource-group ecommerceapp \
+        --name $(AKS_NAME) \
+        --resource-group $(RESOURCE_GROUP) \
         --admin \
         --overwrite-existing
 
