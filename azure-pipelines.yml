@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: Default   # your self-hosted agent
+  name: Default   # self-hosted agent
 
 variables:
   ACR_NAME: rishabhacr07
@@ -20,7 +20,6 @@ stages:
   - job: DockerJob
     steps:
 
-    # Checkout
     - checkout: self
 
     # Login to ACR
@@ -52,21 +51,39 @@ stages:
 
     - checkout: self
 
-    # Verify cluster
+    # Check cluster
     - script: |
         kubectl get nodes
       displayName: Check AKS Connection
 
-    # Update images dynamically (VERY IMPORTANT)
+    # 🔥 IMPORTANT: Update images with version tag
     - script: |
         kubectl set image deployment/ecommerce-frontend \
         frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
 
         kubectl set image deployment/ecommerce-backend \
         backend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
-      displayName: Update Images
+      displayName: Update Images with Version Tag
 
-    # Apply manifests (only if needed)
+    # Apply manifests (if needed)
     - script: |
         kubectl apply -f ks8/
       displayName: Apply Kubernetes YAML
+
+    # 🔥 NEW: Rollout status check
+    - script: |
+        kubectl rollout status deployment/ecommerce-frontend
+        kubectl rollout status deployment/ecommerce-backend
+      displayName: Verify Deployment Rollout
+
+    # 🔥 NEW: Debug visibility
+    - script: |
+        echo "Pods status:"
+        kubectl get pods -o wide
+
+        echo "Services:"
+        kubectl get svc
+
+        echo "Deployments:"
+        kubectl get deploy
+      displayName: Debug Cluster State
