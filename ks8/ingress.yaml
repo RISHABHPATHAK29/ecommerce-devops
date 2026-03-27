@@ -3,22 +3,24 @@ kind: Ingress
 metadata:
   name: ecommerce-ingress
   annotations:
-    kubernetes.io/ingress.class: azure/application-gateway
-    cert-manager.io/cluster-issuer: letsencrypt-prod
+    appgw.ingress.kubernetes.io/appgw-ssl-certificate: "ecommerce-cert"
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
 
 spec:
   ingressClassName: azure-application-gateway
-
-  tls:
-  - hosts:
-    - rishabhpathak.me
-    - www.rishabhpathak.me
-    secretName: ecommerce-tls
 
   rules:
   - host: rishabhpathak.me
     http:
       paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: ecommerce-backend
+            port:
+              number: 3000
+
       - path: /
         pathType: Prefix
         backend:
@@ -27,13 +29,3 @@ spec:
             port:
               number: 80
 
-  - host: www.rishabhpathak.me
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: ecommerce-frontend
-            port:
-              number: 80
