@@ -5,6 +5,7 @@ metadata:
   annotations:
     appgw.ingress.kubernetes.io/appgw-ssl-certificate: "ecommerce-cert"
     appgw.ingress.kubernetes.io/ssl-redirect: "true"
+
 spec:
   ingressClassName: azure-application-gateway
 
