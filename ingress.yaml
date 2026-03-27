@@ -9,10 +9,9 @@ spec:
   ingressClassName: azure-application-gateway
 
   tls:
-  - hosts:
-    - rishabhpathak.me
-    secretName: dummy-secret   # 🔥 REQUIRED (even if not used)
-
+- hosts:
+  - rishabhpathak.me
+  secretName: ecommerce-cert
   rules:
   - host: rishabhpathak.me
     http:
