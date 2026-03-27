@@ -2,17 +2,25 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ecommerce-ingress
-  namespace: default
   annotations:
-    appgw.ingress.kubernetes.io/backend-protocol: "http"
-    appgw.ingress.kubernetes.io/health-probe-path: "/"
-    appgw.ingress.kubernetes.io/health-probe-status-codes: "200-399"
-    appgw.ingress.kubernetes.io/request-timeout: "60"   # 🔥 IMPORTANT
+    appgw.ingress.kubernetes.io/appgw-ssl-certificate: "ecommerce-cert"
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+
 spec:
   ingressClassName: azure-application-gateway
+
   rules:
-  - http:
+  - host: rishabhpathak.me
+    http:
       paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: ecommerce-backend
+            port:
+              number: 3000
+
       - path: /
         pathType: Prefix
         backend:
