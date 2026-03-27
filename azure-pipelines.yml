@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: Default   # self-hosted agent
+  name: Default
 
 variables:
   ACR_NAME: rishabhacr07
@@ -15,75 +15,91 @@ stages:
 # 🔹 STAGE 1: BUILD & PUSH
 - stage: BuildAndPush
   displayName: Build and Push Images
-
   jobs:
   - job: DockerJob
     steps:
-
     - checkout: self
 
-    # Login to ACR
     - script: |
         echo $(ACR_PASSWORD) | docker login $(ACR_NAME).azurecr.io -u $(ACR_NAME) --password-stdin
       displayName: Login to ACR
 
-    # Build & Push Frontend
     - script: |
         docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG) ./frontend
         docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
       displayName: Build & Push Frontend
 
-    # Build & Push Backend
     - script: |
         docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG) ./backend
         docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
       displayName: Build & Push Backend
 
 
-# 🔹 STAGE 2: DEPLOY
-- stage: Deploy
-  displayName: Deploy to AKS
+# 🔹 STAGE 2: DEPLOY TO DEV (APPROVAL REQUIRED)
+- stage: Deploy_Dev
+  displayName: Deploy to DEV
   dependsOn: BuildAndPush
 
   jobs:
-  - job: DeployJob
-    steps:
+  - deployment: DevDeploy
+    environment: dev   # 👈 MUST MATCH ENV NAME
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
 
-    - checkout: self
+          - script: kubectl get nodes
+            displayName: Check AKS
 
-    # Check cluster
-    - script: |
-        kubectl get nodes
-      displayName: Check AKS Connection
+          - script: |
+              kubectl set image deployment/ecommerce-frontend \
+              frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
 
-    # 🔥 IMPORTANT: Update images with version tag
-    - script: |
-        kubectl set image deployment/ecommerce-frontend \
-        frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
+              kubectl set image deployment/ecommerce-backend \
+              backend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
+            displayName: Update Images
 
-        kubectl set image deployment/ecommerce-backend \
-        backend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
-      displayName: Update Images with Version Tag
+          - script: kubectl apply -f ks8/
+            displayName: Apply YAML
 
-    # Apply manifests (if needed)
-    - script: |
-        kubectl apply -f ks8/
-      displayName: Apply Kubernetes YAML
+          - script: kubectl rollout status deployment/ecommerce-frontend
+            displayName: Verify Frontend
 
-    # 🔥 NEW: Rollout status check
-    - script: |
-        kubectl rollout status deployment/ecommerce-frontend
-        kubectl rollout status deployment/ecommerce-backend
-      displayName: Verify Deployment Rollout
+          - script: kubectl rollout status deployment/ecommerce-backend
+            displayName: Verify Backend
 
-    # 🔥 NEW: Debug visibility
-    - script: |
-        echo "Pods status:"
-        kubectl get pods -o wide
 
-        echo "Services:"
-        kubectl get svc
+# 🔹 STAGE 3: DEPLOY TO PROD (APPROVAL REQUIRED)
+- stage: Deploy_Prod
+  displayName: Deploy to PROD
+  dependsOn: Deploy_Dev
 
-        echo "Deployments:"
-        kubectl get deploy
-      displayName: Debug Cluster State
+  jobs:
+  - deployment: ProdDeploy
+    environment: production   # 👈 MUST MATCH EXACT NAME
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+
+          - script: kubectl get nodes
+            displayName: Check AKS
+
+          - script: |
+              kubectl set image deployment/ecommerce-frontend \
+              frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
+
+              kubectl set image deployment/ecommerce-backend \
+              backend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
+            displayName: Update Images
+
+          - script: kubectl apply -f ks8/
+            displayName: Apply YAML
+
+          - script: kubectl rollout status deployment/ecommerce-frontend
+            displayName: Verify Frontend
+
+          - script: kubectl rollout status deployment/ecommerce-backend
+            displayName: Verify Backend
