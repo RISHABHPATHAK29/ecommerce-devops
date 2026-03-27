@@ -1,18 +1,18 @@
 import { product1, product2 } from "./glide.js"
 
-// ❌ REMOVE localStorage cart
-// export let cart = ...
-
-// 🚀 ADD TO CART USING BACKEND
+// 🚀 ADD TO CART USING BACKEND ONLY
 function addToCart(products) {
-    const cartItem = document.querySelector(".header-cart-count")
     const buttons = [...document.getElementsByClassName("add-to-cart")]
 
     buttons.forEach((button) => {
-
         button.addEventListener("click", async function (e) {
-    const id = e.currentTarget.dataset.id
-            const findProduct = products.find((product) => product.id === Number(id))
+
+            const id = e.currentTarget.dataset.id
+            const findProduct = products.find(
+                (product) => product.id === Number(id)
+            )
+
+            console.log("Adding to backend:", findProduct)
 
             try {
                 await fetch("/api/cart", {
@@ -29,7 +29,7 @@ function addToCart(products) {
 
                 button.setAttribute("disabled", "disabled")
 
-                // 🔥 Update cart count
+                // 🔥 Update cart count from backend
                 updateCartCount()
 
             } catch (error) {
@@ -53,7 +53,7 @@ async function updateCartCount() {
 }
 
 
-// 🔗 PRODUCT PAGE ROUTING (NO CHANGE)
+// 🔗 PRODUCT PAGE ROUTING (KEEP THIS)
 function productRoute() {
     const productLink = document.getElementsByClassName("product-link")
 
@@ -68,7 +68,7 @@ function productRoute() {
 }
 
 
-// 🔗 IMAGE ROUTE (NO CHANGE)
+// 🔗 IMAGE ROUTE (KEEP THIS)
 function productImageRoute() {
     const productImageLink = document.querySelectorAll(".product-image a .img2")
 
@@ -83,7 +83,7 @@ function productImageRoute() {
 }
 
 
-// 🚀 MAIN PRODUCT RENDER FUNCTION
+// 🚀 MAIN PRODUCT FUNCTION
 async function productFunc(products) {
 
     const productsContainer = document.getElementById("product-list")
@@ -95,35 +95,43 @@ async function productFunc(products) {
         results += `
             <li class="product-item glide__slide">
                 <div class="product-image">
-                    <a href="" >
-                        <img src="${product.img.singleImage}" alt="" class="img1" />
-                        <img src="${product.img.thumbs[1]}" alt="" class="img2" data-id="${product.id}" />
+                    <a href="">
+                        <img src="${product.img.singleImage}" class="img1" />
+                        <img src="${product.img.thumbs[1]}" class="img2" data-id="${product.id}" />
                     </a>
                 </div>
+
                 <div class="product-info">
-                <a href="#" class="product-title"> ${product.name} </a>
-                <ul class="product-star">
-                    <li><i class="bi bi-star-fill"></i></li>
-                    <li><i class="bi bi-star-fill"></i></li>
-                    <li><i class="bi bi-star-fill"></i></li>
-                    <li><i class="bi bi-star-fill"></i></li>
-                    <li><i class="bi bi-star-half"></i></li>
-                </ul>
-                <div class="product-prices">
-                    <strong class="new-price">$${product.price.newPrice.toFixed(2)}</strong>
-                    <span class="old-price">$${product.price.oldPrice.toFixed(2)}</span>
-                </div>
-                <span class="product-discount"> ${product.discount}% </span>
-                <div class="product-links">
-                    <button class="add-to-cart" data-id="${product.id}">
-                        <i class="bi bi-basket-fill"></i>
-                    </button>
-                    <button><i class="bi bi-heart-fill"></i></button>
-                    <a href="#" class="product-link" data-id="${product.id}">
-                        <i class="bi bi-eye-fill"></i>
-                    </a>
-                    <a href="#"><i class="bi bi-share-fill"></i></a>
-                </div>
+                    <a href="#" class="product-title">${product.name}</a>
+
+                    <ul class="product-star">
+                        <li><i class="bi bi-star-fill"></i></li>
+                        <li><i class="bi bi-star-fill"></i></li>
+                        <li><i class="bi bi-star-fill"></i></li>
+                        <li><i class="bi bi-star-fill"></i></li>
+                        <li><i class="bi bi-star-half"></i></li>
+                    </ul>
+
+                    <div class="product-prices">
+                        <strong>$${product.price.newPrice.toFixed(2)}</strong>
+                        <span>$${product.price.oldPrice.toFixed(2)}</span>
+                    </div>
+
+                    <span>${product.discount}%</span>
+
+                    <div class="product-links">
+                        <button class="add-to-cart" data-id="${product.id}">
+                            <i class="bi bi-basket-fill"></i>
+                        </button>
+
+                        <button><i class="bi bi-heart-fill"></i></button>
+
+                        <a href="#" class="product-link" data-id="${product.id}">
+                            <i class="bi bi-eye-fill"></i>
+                        </a>
+
+                        <a href="#"><i class="bi bi-share-fill"></i></a>
+                    </div>
                 </div>
             </li>
         `
@@ -140,7 +148,7 @@ async function productFunc(products) {
     productRoute()
     productImageRoute()
 
-    // 🔥 load cart count on page load
+    // 🔥 Load cart count on page load
     updateCartCount()
 }
 
