@@ -42,7 +42,7 @@ stages:
 
   jobs:
   - deployment: DevDeploy
-    environment: dev   # 👈 MUST MATCH ENV NAME
+    environment: dev
     strategy:
       runOnce:
         deploy:
@@ -52,6 +52,11 @@ stages:
           - script: kubectl get nodes
             displayName: Check AKS
 
+          # ✅ FIRST create/update deployments
+          - script: kubectl apply -f ks8/
+            displayName: Apply YAML
+
+          # ✅ THEN update images
           - script: |
               kubectl set image deployment/ecommerce-frontend \
               frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
@@ -59,9 +64,6 @@ stages:
               kubectl set image deployment/ecommerce-backend \
               backend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
             displayName: Update Images
-
-          - script: kubectl apply -f ks8/
-            displayName: Apply YAML
 
           - script: kubectl rollout status deployment/ecommerce-frontend
             displayName: Verify Frontend
@@ -77,7 +79,7 @@ stages:
 
   jobs:
   - deployment: ProdDeploy
-    environment: production   # 👈 MUST MATCH EXACT NAME
+    environment: production
     strategy:
       runOnce:
         deploy:
@@ -87,6 +89,11 @@ stages:
           - script: kubectl get nodes
             displayName: Check AKS
 
+          # ✅ FIRST create/update deployments
+          - script: kubectl apply -f ks8/
+            displayName: Apply YAML
+
+          # ✅ THEN update images
           - script: |
               kubectl set image deployment/ecommerce-frontend \
               frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
@@ -94,9 +101,6 @@ stages:
               kubectl set image deployment/ecommerce-backend \
               backend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
             displayName: Update Images
-
-          - script: kubectl apply -f ks8/
-            displayName: Apply YAML
 
           - script: kubectl rollout status deployment/ecommerce-frontend
             displayName: Verify Frontend
