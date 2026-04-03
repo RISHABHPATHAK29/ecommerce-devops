@@ -113,8 +113,8 @@ async function productFunc(products) {
                     </ul>
 
                     <div class="product-prices">
-                        <strong>$${product.price.newPrice.toFixed(2)}</strong>
-                        <span>$${product.price.oldPrice.toFixed(2)}</span>
+                        <strong>₹${product.price.newPrice.toFixed(2)}</strong>
+                        <span>₹${product.price.oldPrice.toFixed(2)}</span>
                     </div>
 
                     <span>${product.discount}%</span>
