@@ -6,13 +6,13 @@ pool:
 
 variables:
   ACR_NAME: rishabhacr07
-  IMAGE_NAME_FRONTEND: frontend
-  IMAGE_NAME_BACKEND: backend
+  IMAGE_NAME_FRONTEND: ecommerce-frontend
+  IMAGE_NAME_BACKEND: ecommerce-backend
   TAG: $(Build.BuildId)
 
 stages:
 
-# 🔹 STAGE 1: BUILD & PUSH
+# ================= BUILD & PUSH =================
 - stage: BuildAndPush
   displayName: Build and Push Images
   jobs:
@@ -20,29 +20,41 @@ stages:
     steps:
     - checkout: self
 
+    # 🔐 Login to ACR
     - script: |
         echo $(ACR_PASSWORD) | docker login $(ACR_NAME).azurecr.io -u $(ACR_NAME) --password-stdin
       displayName: Login to ACR
 
+    # 🔥 Enable buildx
     - script: |
-        docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG) ./frontend
-        docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
-      displayName: Build & Push Frontend
+        docker buildx create --use
+      displayName: Enable Docker Buildx
 
+    # 🔥 Build & Push FRONTEND (Multi-Arch)
     - script: |
-        docker build -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG) ./backend
-        docker push $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
-      displayName: Build & Push Backend
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG) \
+          ./frontend --push
+      displayName: Build & Push Frontend (Multi-Arch)
+
+    # 🔥 Build & Push BACKEND (Multi-Arch)
+    - script: |
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          -t $(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG) \
+          ./backend --push
+      displayName: Build & Push Backend (Multi-Arch)
 
 
-# 🔹 STAGE 2: DEPLOY TO DEV (APPROVAL REQUIRED)
+# ================= DEPLOY TO DEV =================
 - stage: Deploy_Dev
   displayName: Deploy to DEV
   dependsOn: BuildAndPush
 
   jobs:
   - deployment: DevDeploy
-    environment: dev
+    environment: dev   # 👉 Add approval here in Azure DevOps UI
     strategy:
       runOnce:
         deploy:
@@ -52,11 +64,11 @@ stages:
           - script: kubectl get nodes
             displayName: Check AKS
 
-          # ✅ FIRST create/update deployments
+          # Apply all K8s configs
           - script: kubectl apply -f ks8/
             displayName: Apply YAML
 
-          # ✅ THEN update images
+          # Update images
           - script: |
               kubectl set image deployment/ecommerce-frontend \
               frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)
@@ -65,6 +77,7 @@ stages:
               backend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_BACKEND):$(TAG)
             displayName: Update Images
 
+          # Verify rollout
           - script: kubectl rollout status deployment/ecommerce-frontend
             displayName: Verify Frontend
 
@@ -72,14 +85,14 @@ stages:
             displayName: Verify Backend
 
 
-# 🔹 STAGE 3: DEPLOY TO PROD (APPROVAL REQUIRED)
+# ================= DEPLOY TO PROD =================
 - stage: Deploy_Prod
   displayName: Deploy to PROD
   dependsOn: Deploy_Dev
 
   jobs:
   - deployment: ProdDeploy
-    environment: production
+    environment: production   # 👉 Add approval here
     strategy:
       runOnce:
         deploy:
@@ -89,11 +102,9 @@ stages:
           - script: kubectl get nodes
             displayName: Check AKS
 
-          # ✅ FIRST create/update deployments
           - script: kubectl apply -f ks8/
             displayName: Apply YAML
 
-          # ✅ THEN update images
           - script: |
               kubectl set image deployment/ecommerce-frontend \
               frontend=$(ACR_NAME).azurecr.io/$(IMAGE_NAME_FRONTEND):$(TAG)

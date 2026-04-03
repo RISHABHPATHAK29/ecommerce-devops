@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: rishabhacr07.azurecr.io/backend:latest
+        image: rishabhacr07.azurecr.io/ecommerce-backend:latest
         ports:
         - containerPort: 3000
 ---
