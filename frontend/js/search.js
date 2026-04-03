@@ -34,7 +34,7 @@ function searchFunc(data) {
                             <div class="search-info">
                             <h4>${item.name}</h4>
                             <span class="search-sku">SKU : PD0016</span>
-                            <span class="search-price">$${(item.price.newPrice).toFixed(2)}</span>
+                            <span class="search-price">₹${(item.price.newPrice).toFixed(2)}</span>
                             </div>  
                         </a>    
                     `
@@ -58,7 +58,7 @@ function searchFunc(data) {
                             <div class="search-info">
                             <h4>${item.name}</h4>
                             <span class="search-sku">SKU : PD0016</span>
-                            <span class="search-price">$${(item.price.newPrice).toFixed(2)}</span>
+                            <span class="search-price">₹${(item.price.newPrice).toFixed(2)}</span>
                             </div>  
                         </a>    
                     `

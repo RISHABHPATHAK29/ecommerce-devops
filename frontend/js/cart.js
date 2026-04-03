@@ -98,15 +98,15 @@ function saveCardValues() {
         itemsTotal += item.price * item.quantity
     })
 
-    subTotal.innerHTML = `$${itemsTotal.toFixed(2)}`
-    cartTotal.innerHTML = `$${itemsTotal.toFixed(2)}`
+    subTotal.innerHTML = `₹${itemsTotal.toFixed(2)}`
+    cartTotal.innerHTML = `₹${itemsTotal.toFixed(2)}`
 
     if (fastCargo) {
         fastCargo.addEventListener("change", (e) => {
             if (e.target.checked) {
-                cartTotal.innerHTML = `$${(itemsTotal + fastCargoPrice).toFixed(2)}`
+                cartTotal.innerHTML = `₹${(itemsTotal + fastCargoPrice).toFixed(2)}`
             } else {
-                cartTotal.innerHTML = `$${itemsTotal.toFixed(2)}`
+                cartTotal.innerHTML = `₹${itemsTotal.toFixed(2)}`
             }
         })
     }
